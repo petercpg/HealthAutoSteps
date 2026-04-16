@@ -182,6 +182,8 @@ fun MainScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding() // Handles top camera cutout
+            .displayCutoutPadding() // Specifically handles cutouts
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
