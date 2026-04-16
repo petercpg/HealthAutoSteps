@@ -13,14 +13,9 @@ object WorkScheduler {
     fun scheduleNextWork(context: Context, forceNextDay: Boolean = false) {
         val settings = SettingsManager(context)
         val now = LocalDateTime.now()
-        var nextSync = now.withHour(settings.syncTime.hour).withMinute(settings.syncTime.minute).withSecond(0).withNano(0)
-        
-        // If the sync time has already passed today, or we're forced to (e.g. from within a worker), schedule for tomorrow
-        if (forceNextDay || now.isAfter(nextSync) || now.isEqual(nextSync)) {
-            nextSync = nextSync.plusDays(1)
-        }
-        
-        val delayMinutes = Duration.between(now, nextSync).toMinutes()
+        val nextSync = now.withHour(settings.syncTime.hour).withMinute(settings.syncTime.minute).withSecond(0).withNano(0)
+
+        val delayMinutes = LogicUtils.calculateNextSyncDelay(now, settings.syncTime, forceNextDay)
         Log.d("HealthAutoSteps", "Scheduling next work at $nextSync (in $delayMinutes minutes)")
 
         val workRequest = OneTimeWorkRequestBuilder<StepWorker>()

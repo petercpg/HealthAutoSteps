@@ -41,35 +41,15 @@ class HealthConnectManager(private val context: Context) {
     }
 
     suspend fun writeDistributedSteps(totalSteps: Long, startTime: Instant, endTime: Instant) {
-        val duration = Duration.between(startTime, endTime)
-        val minutes = duration.toMinutes()
-        if (minutes <= 0) {
-            writeSteps(totalSteps, startTime, endTime)
-            return
-        }
+        val stepChunks = LogicUtils.calculateStepChunks(totalSteps, startTime, endTime)
+        if (stepChunks.isEmpty()) return
 
         val records = mutableListOf<StepsRecord>()
-        var remainingSteps = totalSteps
         var currentStart = startTime
 
-        while (currentStart.isBefore(endTime) && remainingSteps > 0) {
+        stepChunks.forEach { chunkSteps ->
             val chunkMinutes = min(30L, Duration.between(currentStart, endTime).toMinutes())
-            if (chunkMinutes <= 0) break
-
             val currentEnd = currentStart.plus(chunkMinutes, ChronoUnit.MINUTES)
-
-            val fraction = chunkMinutes.toDouble() / minutes.toDouble()
-            var chunkSteps = (totalSteps * fraction).toLong()
-
-            val variation = (chunkSteps * 0.2).toLong()
-            if (variation > 0) {
-                chunkSteps += Random.nextLong(-variation, variation + 1)
-            }
-
-            if (currentStart.plus(chunkMinutes, ChronoUnit.MINUTES).isAfter(endTime.minus(1, ChronoUnit.MINUTES)) || chunkSteps > remainingSteps) {
-                chunkSteps = remainingSteps
-            }
-            if (chunkSteps <= 0 && remainingSteps > 0) chunkSteps = 1
 
             records.add(
                 StepsRecord(
@@ -81,7 +61,6 @@ class HealthConnectManager(private val context: Context) {
                     metadata = HealthMetadata.manualEntry()
                 )
             )
-            remainingSteps -= chunkSteps
             currentStart = currentEnd
         }
 
