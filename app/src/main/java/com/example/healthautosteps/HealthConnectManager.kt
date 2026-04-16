@@ -4,11 +4,15 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.metadata.DataOrigin
+import androidx.health.connect.client.records.metadata.Metadata as HealthMetadata
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 import kotlin.random.Random
 
 class HealthConnectManager(private val context: Context) {
@@ -30,13 +34,14 @@ class HealthConnectManager(private val context: Context) {
             startTime = startTime,
             endTime = endTime,
             startZoneOffset = ZonedDateTime.now().offset,
-            endZoneOffset = ZonedDateTime.now().offset
+            endZoneOffset = ZonedDateTime.now().offset,
+            metadata = HealthMetadata.manualEntry()
         )
         healthConnectClient.insertRecords(listOf(record))
     }
 
     suspend fun writeDistributedSteps(totalSteps: Long, startTime: Instant, endTime: Instant) {
-        val duration = java.time.Duration.between(startTime, endTime)
+        val duration = Duration.between(startTime, endTime)
         val minutes = duration.toMinutes()
         if (minutes <= 0) {
             writeSteps(totalSteps, startTime, endTime)
@@ -48,7 +53,7 @@ class HealthConnectManager(private val context: Context) {
         var currentStart = startTime
 
         while (currentStart.isBefore(endTime) && remainingSteps > 0) {
-            val chunkMinutes = kotlin.math.min(30L, java.time.Duration.between(currentStart, endTime).toMinutes())
+            val chunkMinutes = min(30L, Duration.between(currentStart, endTime).toMinutes())
             if (chunkMinutes <= 0) break
 
             val currentEnd = currentStart.plus(chunkMinutes, ChronoUnit.MINUTES)
@@ -72,7 +77,8 @@ class HealthConnectManager(private val context: Context) {
                     startTime = currentStart,
                     endTime = currentEnd,
                     startZoneOffset = ZonedDateTime.now().offset,
-                    endZoneOffset = ZonedDateTime.now().offset
+                    endZoneOffset = ZonedDateTime.now().offset,
+                    metadata = HealthMetadata.manualEntry()
                 )
             )
             remainingSteps -= chunkSteps
@@ -88,7 +94,7 @@ class HealthConnectManager(private val context: Context) {
         val request = ReadRecordsRequest(
             recordType = StepsRecord::class,
             timeRangeFilter = TimeRangeFilter.between(Instant.now().minus(7, ChronoUnit.DAYS), Instant.now()),
-            dataOriginFilter = setOf(androidx.health.connect.client.records.metadata.DataOrigin(context.packageName)),
+            dataOriginFilter = setOf(DataOrigin(context.packageName)),
             ascendingOrder = false,
             pageSize = limit
         )

@@ -1,12 +1,16 @@
 package com.example.healthautosteps
 
+import android.Manifest
 import android.app.KeyguardManager
 import android.os.Bundle
 import android.util.Log
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.registerForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -36,9 +40,19 @@ class MainActivity : ComponentActivity() {
     ) { granted ->
         Log.d("HealthAutoSteps", "Permissions granted result: $granted")
         if (granted.containsAll(healthConnectManager.permissions)) {
-            Toast.makeText(this, "權限已授予！", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Health Connect 權限已授予！", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, "部分權限未授予 (${granted.size}/${healthConnectManager.permissions.size})", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(this, "通知權限已授予！", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "通知權限被拒絕，您將無法收到執行結果通知", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -50,6 +64,8 @@ class MainActivity : ComponentActivity() {
         Log.d("HealthAutoSteps", "onCreate SDK Status: ${androidx.health.connect.client.HealthConnectClient.getSdkStatus(this)}")
         Log.d("HealthAutoSteps", "Device Secure (Screen Lock): ${km.isDeviceSecure}")
 
+        checkNotificationPermission()
+
         setContent {
             HealthAutoStepsTheme {
                 Surface(
@@ -58,13 +74,19 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainScreen(
                         onCheckPermissions = { checkAndRequestPermissions() },
-                        onScheduleWorker = { scheduleStepWorker(settingsManager) },
+                        onScheduleWorker = { scheduleStepWorker() },
                         onManualWrite = { steps -> manualWriteSteps(steps) },
                         healthConnectManager = healthConnectManager,
                         settings = settingsManager
                     )
                 }
             }
+        }
+    }
+
+    private fun checkNotificationPermission() {
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -107,30 +129,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun scheduleStepWorker(settings: SettingsManager) {
-        val now = java.time.LocalDateTime.now()
-        var nextSync = now.withHour(settings.syncTime.hour).withMinute(settings.syncTime.minute).withSecond(0).withNano(0)
-        if (now.isAfter(nextSync) || now.isEqual(nextSync)) {
-            nextSync = nextSync.plusDays(1)
-        }
-        val delayMinutes = java.time.Duration.between(now, nextSync).toMinutes()
-
-        val workRequest = PeriodicWorkRequestBuilder<StepWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                    .setRequiresBatteryNotLow(true)
-                    .build()
-            )
-            .build()
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "AutoStepSync",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
-        Toast.makeText(this, "每日自動同步已設定於 ${settings.syncTime}", Toast.LENGTH_SHORT).show()
+    private fun scheduleStepWorker() {
+        WorkScheduler.scheduleNextWork(this)
+        Toast.makeText(this, "每日自動同步已設定於 ${settingsManager.syncTime}", Toast.LENGTH_SHORT).show()
     }
 
     private fun manualWriteSteps(steps: Long) {
@@ -248,7 +249,8 @@ fun MainScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("最近寫入紀錄 (${records.size})", style = MaterialTheme.typography.titleMedium)
+        Text("最近分段寫入紀錄 (共 ${records.size} 筆)", style = MaterialTheme.typography.titleMedium)
+        Text("每一筆代表固定時段內的分配步數", style = MaterialTheme.typography.bodySmall)
         records.forEach { record ->
             val formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm")
             val start = record.startTime.atZone(ZoneId.systemDefault()).format(formatter)
