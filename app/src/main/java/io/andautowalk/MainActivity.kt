@@ -1,4 +1,4 @@
-package com.example.healthautosteps
+package io.andautowalk
 
 import android.Manifest
 import android.app.KeyguardManager

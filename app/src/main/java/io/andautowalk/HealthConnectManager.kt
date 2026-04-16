@@ -1,4 +1,4 @@
-package com.example.healthautosteps
+package io.andautowalk
 
 import android.content.Context
 import androidx.health.connect.client.HealthConnectClient

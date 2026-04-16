@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.healthautosteps"
+    namespace = "io.andautowalk"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.healthautosteps"
+        applicationId = "io.andautowalk"
         minSdk = 34
         targetSdk = 37
         versionCode = 1
