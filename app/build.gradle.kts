@@ -18,19 +18,37 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // We expect the CI to put the keystore in the project root
+            val keystoreFile = rootProject.file("release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
+    }
+
+    val baseVersionName = "1.1"
+    val ciBuildNumber = project.findProperty("versionCode")?.toString()?.toInt() ?: 1
+    val ciVersionSuffix = project.findProperty("versionNameSuffix")?.toString() ?: ""
+
     defaultConfig {
         applicationId = "io.andautowalk"
         minSdk = 34
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.1"
+        versionCode = ciBuildNumber
+        versionName = "$baseVersionName$ciVersionSuffix"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
