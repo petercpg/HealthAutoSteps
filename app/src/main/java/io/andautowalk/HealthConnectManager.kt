@@ -1,6 +1,7 @@
 package io.andautowalk
 
 import android.content.Context
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
@@ -48,9 +49,15 @@ class HealthConnectManager(private val context: Context) {
         var currentStart = startTime
 
         stepChunks.forEach { chunkSteps ->
-            val chunkMinutes = min(30L, Duration.between(currentStart, endTime).toMinutes())
-            val currentEnd = currentStart.plus(chunkMinutes, ChronoUnit.MINUTES)
+            val chunkMinutes = Duration.between(currentStart, endTime).toMinutes()
+            val minutesToWait = min(30L, chunkMinutes)
+            
+            // Health Connect requires startTime < endTime.
+            // Ensure at least 1 minute or a minimum duration.
+            val actualMinutes = if (minutesToWait <= 0) 1L else minutesToWait
+            val currentEnd = currentStart.plus(actualMinutes, ChronoUnit.MINUTES)
 
+            Log.d("HealthAutoSteps", "Adding chunk: $chunkSteps steps from $currentStart to $currentEnd")
             records.add(
                 StepsRecord(
                     count = chunkSteps,

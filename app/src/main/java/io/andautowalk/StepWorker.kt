@@ -45,9 +45,9 @@ class StepWorker(appContext: Context, workerParams: WorkerParameters) :
         val endInstant = endTime.atZone(ZoneId.systemDefault()).toInstant()
 
         return try {
-            Log.d("HealthAutoSteps", "StepWorker executing: Write $totalSteps steps from $startInstant to $endInstant (Settings: min=$minSteps, max=$maxSteps)")
+            Log.d("HealthAutoSteps", "StepWorker executing: Write $totalSteps steps from $startInstant to $endInstant")
             healthConnectManager.writeDistributedSteps(totalSteps, startInstant, endInstant)
-            Log.d("HealthAutoSteps", "StepWorker success: wrote $totalSteps steps")
+            Log.d("HealthAutoSteps", "StepWorker successfully completed writeDistributedSteps")
             showCompletionNotification(totalSteps, startTime, endTime)
             
             // Reschedule the next day's work to avoid looping if syncTime is current time

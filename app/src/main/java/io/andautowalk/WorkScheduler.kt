@@ -13,10 +13,9 @@ object WorkScheduler {
     fun scheduleNextWork(context: Context, forceNextDay: Boolean = false) {
         val settings = SettingsManager(context)
         val now = LocalDateTime.now()
-        val nextSync = now.withHour(settings.syncTime.hour).withMinute(settings.syncTime.minute).withSecond(0).withNano(0)
-
         val delayMinutes = LogicUtils.calculateNextSyncDelay(now, settings.syncTime, forceNextDay)
-        Log.d("HealthAutoSteps", "Scheduling next work at $nextSync (in $delayMinutes minutes)")
+        val actualNextSync = now.plusMinutes(delayMinutes)
+        Log.d("HealthAutoSteps", "Scheduling next work at $actualNextSync (in $delayMinutes minutes)")
 
         val workRequest = OneTimeWorkRequestBuilder<StepWorker>()
             .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
