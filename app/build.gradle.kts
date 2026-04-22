@@ -31,7 +31,7 @@ android {
         }
     }
 
-    val baseVersionName = "1.1"
+    val baseVersionName = "1.2"
     val ciBuildNumber = project.findProperty("versionCode")?.toString()?.toInt() ?: 1
     val ciVersionSuffix = project.findProperty("versionNameSuffix")?.toString() ?: ""
 
