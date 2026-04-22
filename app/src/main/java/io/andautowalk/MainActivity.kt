@@ -2,34 +2,57 @@ package io.andautowalk
 
 import android.Manifest
 import android.app.KeyguardManager
-import android.os.Bundle
-import android.util.Log
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
+import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.registerForActivityResult
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
-import androidx.work.*
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     private lateinit var healthConnectManager: HealthConnectManager
@@ -152,6 +175,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onCheckPermissions: () -> Unit,
@@ -168,6 +192,49 @@ fun MainScreen(
     var manualSteps by remember { mutableStateOf("1000") }
     var records by remember { mutableStateOf<List<androidx.health.connect.client.records.StepsRecord>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+    var showSyncTimePicker by remember { mutableStateOf(false) }
+
+    if (showStartTimePicker) {
+        TimePickerDialog(
+            title = "選擇開始時間",
+            onDismissRequest = { showStartTimePicker = false },
+            initialTime = settings.startTime,
+            onConfirm = {
+                settings.startTime = it
+                startTime = it.toString()
+                showStartTimePicker = false
+            }
+        )
+    }
+
+    if (showEndTimePicker) {
+        TimePickerDialog(
+            title = "選擇結束時間",
+            onDismissRequest = { showEndTimePicker = false },
+            initialTime = settings.endTime,
+            onConfirm = {
+                settings.endTime = it
+                endTime = it.toString()
+                showEndTimePicker = false
+            }
+        )
+    }
+
+    if (showSyncTimePicker) {
+        TimePickerDialog(
+            title = "選擇同步時間",
+            onDismissRequest = { showSyncTimePicker = false },
+            initialTime = settings.syncTime,
+            onConfirm = {
+                settings.syncTime = it
+                syncTime = it.toString()
+                showSyncTimePicker = false
+            }
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (healthConnectManager.hasAllPermissions()) {
@@ -196,18 +263,36 @@ fun MainScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
         Text("同步設定", style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(
-            value = startTime,
-            onValueChange = { startTime = it; runCatching { settings.startTime = LocalTime.parse(it) } },
-            label = { Text("開始時間 (HH:mm)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = endTime,
-            onValueChange = { endTime = it; runCatching { settings.endTime = LocalTime.parse(it) } },
-            label = { Text("結束時間 (HH:mm)") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { showStartTimePicker = true }) {
+            OutlinedTextField(
+                value = startTime,
+                onValueChange = { },
+                label = { Text("開始時間") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { showEndTimePicker = true }) {
+            OutlinedTextField(
+                value = endTime,
+                onValueChange = { },
+                label = { Text("結束時間") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
         OutlinedTextField(
             value = minSteps,
             onValueChange = { minSteps = it; runCatching { settings.minSteps = it.toInt() } },
@@ -222,12 +307,21 @@ fun MainScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        OutlinedTextField(
-            value = syncTime,
-            onValueChange = { syncTime = it; runCatching { settings.syncTime = LocalTime.parse(it) } },
-            label = { Text("每日同步時間 (HH:mm)") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { showSyncTimePicker = true }) {
+            OutlinedTextField(
+                value = syncTime,
+                onValueChange = { },
+                label = { Text("每日同步時間") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onScheduleWorker, modifier = Modifier.fillMaxWidth()) {
@@ -274,4 +368,44 @@ fun MainScreen(
 @Composable
 fun HealthAutoStepsTheme(content: @Composable () -> Unit) {
     MaterialTheme(content = content)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialog(
+    title: String,
+    onDismissRequest: () -> Unit,
+    onConfirm: (LocalTime) -> Unit,
+    initialTime: LocalTime
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute,
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute))
+            }) {
+                Text("確定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("取消")
+            }
+        },
+        title = { Text(title) },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TimePicker(state = timePickerState)
+            }
+        }
+    )
 }
