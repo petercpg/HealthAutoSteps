@@ -55,6 +55,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+        }
     }
     buildFeatures {
         compose = true
