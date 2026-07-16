@@ -28,13 +28,13 @@ jobs:
         run: |
           echo $ENCODED_STRING | base64 -d > release.jks
 
-      - name: Build Release APK
+      - name: Build Release APK and SBOM
         env:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
         run: |
-          ./gradlew assembleRelease \
+          ./gradlew assembleRelease cyclonedxBom \
             -PversionCode=${{ github.run_number }} \
             -PversionNameSuffix=.${{ github.run_number }}
 
@@ -46,6 +46,13 @@ jobs:
           mv app/build/outputs/apk/release/app-release.apk HealthAutoSteps-v$FULL_VERSION.apk
           if [ -f app/build/outputs/mapping/release/mapping.txt ]; then
             cp app/build/outputs/mapping/release/mapping.txt mapping-v$FULL_VERSION.txt
+          fi
+          # Rename SBOM files
+          if [ -f app/build/reports/bom.json ]; then
+            cp app/build/reports/bom.json bom-v$FULL_VERSION.json
+          fi
+          if [ -f app/build/reports/bom.xml ]; then
+            cp app/build/reports/bom.xml bom-v$FULL_VERSION.xml
           fi
           echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
 
@@ -60,5 +67,7 @@ jobs:
           files: |
             HealthAutoSteps-v${{ env.FULL_VERSION }}.apk
             mapping-v${{ env.FULL_VERSION }}.txt
+            bom-v${{ env.FULL_VERSION }}.json
+            bom-v${{ env.FULL_VERSION }}.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
