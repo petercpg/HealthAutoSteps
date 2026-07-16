@@ -1,0 +1,4 @@
+- [ ] Generate SBOM in `release.yml`
+- [ ] Rename SBOM files for release
+- [ ] Include SBOM files in GitHub Release assets
+- [ ] Verify workflow logic

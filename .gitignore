@@ -5,6 +5,7 @@ app/build/
 .gradle/
 .kotlin/
 .idea/
+.artifacts/
 
 # Local configuration files
 local.properties
