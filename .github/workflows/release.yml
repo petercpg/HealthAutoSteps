@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v6
       - name: Set up JDK 25
@@ -66,6 +68,17 @@ jobs:
           fi
 
           echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'HealthAutoSteps-v${{ env.FULL_VERSION }}.apk'
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v1
+        with:
+          subject-path: 'HealthAutoSteps-v${{ env.FULL_VERSION }}.apk'
+          sbom-path: 'bom-v${{ env.FULL_VERSION }}.json'
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
