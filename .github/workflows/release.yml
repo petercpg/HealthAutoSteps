@@ -75,7 +75,7 @@ jobs:
           subject-path: 'HealthAutoSteps-v${{ env.FULL_VERSION }}.apk'
 
       - name: Attest SBOM
-        uses: actions/attest-sbom@v1
+        uses: actions/attest@v4
         with:
           subject-path: 'HealthAutoSteps-v${{ env.FULL_VERSION }}.apk'
           sbom-path: 'bom-v${{ env.FULL_VERSION }}.json'
