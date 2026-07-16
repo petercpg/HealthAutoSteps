@@ -35,13 +35,16 @@ android {
     val baseVersionName = "1.2"
     val ciBuildNumber = project.findProperty("versionCode")?.toString()?.toInt() ?: 1
     val ciVersionSuffix = project.findProperty("versionNameSuffix")?.toString() ?: ""
+    val fullVersionName = "$baseVersionName$ciVersionSuffix"
+
+    version = fullVersionName
 
     defaultConfig {
         applicationId = "io.andautowalk"
         minSdk = 34
         targetSdk = 37
         versionCode = ciBuildNumber
-        versionName = "$baseVersionName$ciVersionSuffix"
+        versionName = fullVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,6 +78,10 @@ android {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.cyclonedxBom {
+    projectType = org.cyclonedx.model.Component.Type.APPLICATION
 }
 
 dependencies {
