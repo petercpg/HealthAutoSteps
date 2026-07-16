@@ -48,11 +48,11 @@ jobs:
             cp app/build/outputs/mapping/release/mapping.txt mapping-v$FULL_VERSION.txt
           fi
           # Rename SBOM files
-          if [ -f app/build/reports/bom.json ]; then
-            cp app/build/reports/bom.json bom-v$FULL_VERSION.json
+          if [ -f app/build/reports/cyclonedx/bom.json ]; then
+            cp app/build/reports/cyclonedx/bom.json bom-v$FULL_VERSION.json
           fi
-          if [ -f app/build/reports/bom.xml ]; then
-            cp app/build/reports/bom.xml bom-v$FULL_VERSION.xml
+          if [ -f app/build/reports/cyclonedx/bom.xml ]; then
+            cp app/build/reports/cyclonedx/bom.xml bom-v$FULL_VERSION.xml
           fi
           echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
 
