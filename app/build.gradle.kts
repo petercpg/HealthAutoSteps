@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    id("org.cyclonedx.bom") version "3.4.0"
+    id("org.cyclonedx.bom") version "3.4.1"
 }
 
 android {
